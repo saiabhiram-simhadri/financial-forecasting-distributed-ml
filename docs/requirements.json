@@ -1,0 +1,309 @@
+[
+  {
+    "key": "hadoop_hive",
+    "file": "Data Analysis and Management using Hadoop & Hive.docx",
+    "notebook": null,
+    "items": [
+      [
+        "Create a directory in HDFS",
+        "scripts/run_hadoop.sh creates a run-specific HDFS raw directory and uploads bank.csv with hdfs dfs -put. Capture mkdir/put/ls and record the RAW_PATH printed at the end. Validate the CSV first."
+      ],
+      [
+        "Write a MapReduce program in Python",
+        "MR01: mapper.py --task balance_by_job; reducer output is key, sum, nonmissing count, mean. Explain why sum/count combiners preserve weighted means. Capture code and all reducer partitions."
+      ],
+      [
+        "Write another MapReduce program",
+        "MR02: --task housing_by_education groups by education|housing. Count is column 3; unknown housing is a separate bucket. Capture counters and output."
+      ],
+      [
+        "Perform a MapReduce job",
+        "MR03: --task contacts_by_month groups by month|y. Sum/count are contact-record counts, not unique-person counts; no client ID is available."
+      ],
+      [
+        "Analyze the average duration",
+        "MR04: --task duration_by_poutcome calculates mean contact seconds for each previous campaign outcome. This is not transaction duration."
+      ],
+      [
+        "Examine the relationship",
+        "MR05: --task balance_by_age summarizes average balance for <30, 30-60, >60 age groups. Complement with H09/EDA09 Pearson correlation. Report observed values without claiming causality."
+      ],
+      [
+        "Create a Hive database",
+        "H01: hive/01_tables.hql creates banking_data. Run using beeline and the RAW_PATH printed by run_hadoop.sh. Capture database/table creation."
+      ],
+      [
+        "Define and create a Hive table",
+        "H01: client_info_raw uses OpenCSVSerde strings to parse quoted CSV; client_info stores typed INT/BIGINT/STRING columns as ORC. Capture DESCRIBE banking_data.client_info."
+      ],
+      [
+        "Load the data",
+        "H01: external raw table points at the uploaded HDFS directory; INSERT OVERWRITE TABLE client_info casts into ORC. This refreshes the project's derived table; compare raw/typed row counts."
+      ],
+      [
+        "Write a HiveQL query to count",
+        "H02 in hive/02_analysis.hql: total row count. Include query and actual count."
+      ],
+      [
+        "Display the first 10",
+        "H02: SELECT * LIMIT 10; order is unspecified because no unique row ID exists."
+      ],
+      [
+        "Retrieve all records",
+        "H03: marital='married' AND loan='yes'. Capture query/output; retain complete results remotely if longer than the screenshot."
+      ],
+      [
+        "List the top 10",
+        "H04: descending balance with job/marital fields. These are records, not necessarily 10 distinct clients."
+      ],
+      [
+        "Calculate the average age",
+        "H05: average age and record count by job."
+      ],
+      [
+        "Find the total number",
+        "H06: existing credit default='yes', grouped by education. This is not a future-default prediction."
+      ],
+      [
+        "Identify the top 5",
+        "H07: rank average balance and report subscription percentage for those job categories, with category counts."
+      ],
+      [
+        "Determine the month",
+        "H08: contact count descending and current subscription success percentage; ties break alphabetically."
+      ],
+      [
+        "Calculate the correlation",
+        "H09: CORR(age,balance), Pearson correlation. Undefined for constant variables; association is not causation."
+      ],
+      [
+        "Analyze the year-over-year",
+        "H10 is explicitly not identifiable: bank.csv lacks year or contact_date. Do not invent years or infer them from row order. Obtain an observed dated dataset before completing a real YoY analysis."
+      ],
+      [
+        "Identify any unusual patterns",
+        "H11: education balance summaries and descriptive z-scores of group means. Bank balance is described as average yearly balance, but no longitudinal annual series exists. Flag candidates for review, not proven anomalies."
+      ],
+      [
+        "Analyze the impact",
+        "H12: current subscription percentage for each poutcome, including unknown. Discuss observed association and counts."
+      ],
+      [
+        "Compare the average contact duration",
+        "H13: mean contact seconds for y=yes versus y=no. Duration is post-call information and is excluded from pre-call prediction by default."
+      ]
+    ]
+  },
+  {
+    "key": "eda",
+    "file": "Exploratory Data Analysis (EDA) with Spark.docx",
+    "notebook": "01_eda.ipynb",
+    "items": [
+      [
+        "Load the bank.csv",
+        "src/eda.py via spark_job.py eda; 01_preview.csv and printed schema. Use real bank.csv, not bank-additional.csv."
+      ],
+      [
+        "Perform basic data inspection",
+        "01_preview.csv, 01_numeric_summary.csv, and 01_quality.json show rows, numeric summaries, and missing values. Capture printed schema."
+      ],
+      [
+        "Filter the dataset",
+        "02_balance_over_threshold.csv contains a bounded preview of balance>1000. Change --balance-threshold if needed; source DataFrame filtering processes all rows."
+      ],
+      [
+        "Extract the month",
+        "02_04_06_engineered_columns.csv maps month abbreviations to month_number and ceil(month_number/3) as quarter. There is no full contact date/year."
+      ],
+      [
+        "Group the data by job",
+        "03_job_balance_age.csv contains average balance and approximate median age (percentile_approx accuracy 10000). Explain the approximation."
+      ],
+      [
+        "Find the total number",
+        "03_subscribers_by_marital.csv counts y=yes by marital status."
+      ],
+      [
+        "Write a UDF",
+        "banklib.age_group is registered as a Spark Python UDF: age<30, 30<=age<=60, age>60; null age becomes unknown. Engineered output demonstrates its use."
+      ],
+      [
+        "Calculate the subscription rate",
+        "05_education_subscription.csv contains record counts and subscription percentages by education."
+      ],
+      [
+        "Identify the top 3",
+        "05_top3_credit_default_jobs.csv ranks observed existing-credit-default rates. Unknown default statuses are excluded from the rate denominator. Loan-specific defaults cannot be established from this field."
+      ],
+      [
+        "Concatenate the",
+        "02_04_06_engineered_columns.csv includes job_marital using concat_ws."
+      ],
+      [
+        "Use string functions",
+        "02_04_06_engineered_columns.csv includes contact_upper using upper()."
+      ],
+      [
+        "Convert the Spark DataFrame",
+        "export() calls toPandas only on bounded samples and small aggregates, rather than collecting an unbounded dataset. This fulfills conversion while limiting driver memory."
+      ],
+      [
+        "Create a bar plot",
+        "07_job_counts.png and corresponding CSV show clients by job."
+      ],
+      [
+        "Analyze which month",
+        "08_month_contacts.csv and 08_busiest_month.csv include contacts and success percentage."
+      ],
+      [
+        "Find the average duration",
+        "08_duration_by_subscription.csv reports mean contact seconds, grouped by y."
+      ],
+      [
+        "Calculate the correlation coefficient",
+        "09_age_balance_correlation.json reports Pearson r on complete age/balance pairs. Discuss direction and strength from the actual output."
+      ],
+      [
+        "Analyze the proportion",
+        "10_credit_default_counts.csv contains default counts and proportions; 10_credit_default_counts.png plots counts. Keep unknown as a separate category."
+      ],
+      [
+        "Investigate which contact method",
+        "11_contact_success.csv ranks subscription success percent by contact, with sample sizes. Observational differences are not causal effects."
+      ],
+      [
+        "Calculate the average account balance",
+        "12_sql_age_balance.csv comes from a Spark temporary view and SQL GROUP BY age_group. Include the SQL and observed table."
+      ]
+    ]
+  },
+  {
+    "key": "modeling",
+    "file": "Predictive Modeling for Banking Trends.docx",
+    "notebook": "02_modeling.ipynb",
+    "items": [
+      [
+        "Load the bank.csv",
+        "spark_job.py train uses the shared CSV schema and validation."
+      ],
+      [
+        "Perform basic exploratory",
+        "Printed schema, 01_preview.csv, and the separate EDA outputs provide initial exploration."
+      ],
+      [
+        "Handle missing values",
+        "Numeric medians fit inside every CV training fold; blank/?/NA/null numerical values are treated as missing. Categorical missing becomes unknown; unseen categories are retained."
+      ],
+      [
+        "Handle Outliers",
+        "02_preprocessing.json reports training-only IQR outlier counts. Fixed signed log(balance) and log1p count transforms reduce extreme influence while retaining legitimate high/negative balances. No test-set quantiles are learned."
+      ],
+      [
+        "Convert categorical",
+        "StringIndexer(handleInvalid=keep) and OneHotEncoder encode all nine categorical predictors; the target is deterministically yes=1/no=0."
+      ],
+      [
+        "Create a feature vector",
+        "VectorAssembler combines imputed transformed numerical columns, contacted_before, and encoded categoricals. Duration is excluded for pre-call prediction; --include-duration is a separately labeled retrospective variant."
+      ],
+      [
+        "Choose a classification",
+        "Logistic regression is a scalable distributed baseline with interpretable conditional coefficients and regularization. It estimates subscription, not credit risk or market prices."
+      ],
+      [
+        "Split the data",
+        "A deterministic seeded row hash gives approximately 80/20 train/test after exact duplicate removal; duplicate rows cannot cross boundaries. It is not a temporal split because reliable dates are unavailable."
+      ],
+      [
+        "Train the model",
+        "The full pipeline is fit within each CV fold, then the selected pipeline refits on the whole training split. pipeline/ stores the fitted Spark PipelineModel for streaming."
+      ],
+      [
+        "Evaluate the model",
+        "06_metrics.json reports ROC-AUC, PR-AUC, accuracy, positive-class precision/recall/F1, confusion counts, prevalence, and always-no baseline. Interpret PR-AUC and recall in light of imbalance; the fixed threshold is 0.5."
+      ],
+      [
+        "Perform hyperparameter",
+        "ParamGridBuilder explores regParam=[0.01,0.1] and elasticNetParam=[0,0.5]; CrossValidator defaults to three folds, parallelism=1 and collectSubModels=False. Select using mean PR-AUC; test data remains untouched during selection."
+      ],
+      [
+        "Analyze the feature",
+        "08_coefficients.json maps logistic coefficients to assembled feature names and includes the intercept. Magnitudes are affected by units and transformed scales; associations do not imply causal effects."
+      ]
+    ]
+  },
+  {
+    "key": "streaming",
+    "file": "Real-Time Transaction Analysis.docx",
+    "notebook": null,
+    "items": [
+      [
+        "Implement a Spark Streaming application",
+        "scripts/replay.py atomically publishes bounded chunks of bank.csv as JSON with unique event_id and simulated UTC event_time. Run spark_job.py stream with the saved pipeline. This replays marketing/contact records, not actual payments."
+      ],
+      [
+        "Use Spark Streaming",
+        "job_means console query reports cumulative event counts, average account balance, and average contact duration by job. State is bounded by job categories; duration is not actual transaction duration."
+      ],
+      [
+        "Develop a machine learning model",
+        "Historical training is provided by spark_job.py train. Use the resulting pipeline directory; pre-call features exclude duration by default."
+      ],
+      [
+        "Integrate the trained model",
+        "PipelineModel.load transforms every valid incoming event. predictions/ contains append-only Parquet with event_id, timestamp, source fields, prediction, and probability. Labels are optional and are never a feature."
+      ],
+      [
+        "Implement window operations",
+        "window_10s and window_60s console queries use tumbling event-time windows, event counts, and mean balances, with a 20-second watermark and update output mode."
+      ],
+      [
+        "Write a brief analysis",
+        "Capture several successive windows and query_progress.jsonl. Report observed count/balance changes, compare 10s versus 60s smoothing, and note that timestamps/arrival ordering are synthetic. No factual trends are prefilled."
+      ],
+      [
+        "Modify your Spark Streaming",
+        "Replay emits 8-second out-of-order and 90-second-late events after the first two chunks. withWatermark(event_time,20 seconds) bounds window state. The watermark follows observed event-time progress, not wall time; >20s-late records may be dropped by windows but remain in raw predictions/all-time job aggregates. Inspect eventTime.watermark and stateOperators.numRowsDroppedByWatermark in progress logs; actual drops depend on microbatch ordering."
+      ]
+    ]
+  },
+  {
+    "key": "parallelism",
+    "file": "Efficient Data Handling through Data Parallelism.docx",
+    "notebook": "03_parallelism.ipynb",
+    "items": [
+      [
+        "Load the",
+        "01_preview.csv and printed rows demonstrate validated Spark DataFrame loading."
+      ],
+      [
+        "Implement a method",
+        "Round-robin repartition(n) balances row counts without concentrating common job categories on one partition. 01_partition_sizes_N.csv records actual partition sizes. Aggregation later shuffles by job; adaptive execution can coalesce shuffle partitions."
+      ],
+      [
+        "Identify and calculate",
+        "02_parallel_job_balance.csv uses distributed groupBy(job).avg(balance); benchmark repeats partition grids without replicating the dataset. Compare actual medians and invariant aggregate outputs."
+      ],
+      [
+        "Perform a parallel operation",
+        "Loan amount is absent: loan is yes/no. 02_top5_loan_holder_age_bands.csv ranks decade age bands by personal-loan-holder counts and shows average account balance separately. This is a labeled proxy, not a solution for unavailable loan amounts."
+      ],
+      [
+        "Choose a classification",
+        "Logistic regression uses distributed optimization and offers interpretable coefficients. It handles the binary subscription target; the main modeling module supplies cross-validation."
+      ],
+      [
+        "Partition the dataset",
+        "03_04_partitioned_model.json records the partitioned training model and held-out metrics. Approximately 80/20 deterministic split; training repartitions to the largest grid size. Explain shuffle overhead, skew, sparse feature size, and driver/executor memory limits."
+      ],
+      [
+        "Implement resource monitoring",
+        "resource_samples.json samples driver Python CPU/RSS, local JVM child RSS, host CPU/memory each second. Spark UI/event logs supply executor CPU time, GC, memory/spill, shuffle, and task metrics. Local driver metrics do not measure remote executors; fill observations from actual runs."
+      ],
+      [
+        "Manage multiple parallel tasks",
+        "06_scheduled_tasks.json comes from two bounded independent preprocessing actions launched with InheritableThread and separate FAIR scheduler pools/job groups. CV parallelism is independently limited to avoid oversubscription. Show Spark UI jobs/stages and discuss measured resource contention."
+      ]
+    ]
+  }
+]

@@ -1,0 +1,7 @@
+*.sh text eol=lf
+*.py text eol=lf
+*.hql text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.ipynb text eol=lf
+*.docx binary
