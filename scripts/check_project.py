@@ -1,4 +1,4 @@
-"""Dependency-free structural checks: Python, notebook code, DOCX XML, local links."""
+"""Dependency-free structural checks: Python, DOCX XML, local links."""
 import ast
 import json
 from pathlib import Path
@@ -14,19 +14,9 @@ def main():
                     for p in (ROOT / folder).rglob('*.py')]
     for path in python_files:
         ast.parse(path.read_text(encoding='utf-8'), filename=str(path))
-    notebooks = list((ROOT / 'notebooks').glob('*.ipynb'))
-    for path in notebooks:
-        notebook = json.loads(path.read_text(encoding='utf-8'))
-        assert notebook['nbformat'] == 4
-        ids = []
-        for cell in notebook['cells']:
-            ids.append(cell['id'])
-            if cell['cell_type'] == 'code':
-                ast.parse(''.join(cell['source']), filename=str(path))
-        assert len(ids) == len(set(ids)), f'Duplicate cell IDs in {path}'
     copies = list((ROOT / 'submissions').glob('*.docx'))
     reports = json.loads((ROOT / 'docs' / 'requirements.json').read_text(encoding='utf-8'))
-    assert len(copies) == len(reports) == 5
+    assert len(copies) == len(reports) == 1
     for report in reports:
         path = ROOT / 'submissions' / (Path(report['file']).stem + ' - Implementation Guide.docx')
         with zipfile.ZipFile(path) as archive:
@@ -43,7 +33,7 @@ def main():
                 continue
             target = target.split('#')[0]
             assert (path.parent / target).exists(), f'Broken link: {path}: {target}'
-    print(f'OK: {len(python_files)} Python files, {len(notebooks)} notebooks, '
+    print(f'OK: {len(python_files)} Python files, '
           f'{len(copies)} DOCX copies, {sum(len(r["items"]) for r in reports)} mapped prompts, local Markdown links')
 
 

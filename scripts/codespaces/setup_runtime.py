@@ -20,9 +20,9 @@ APACHE = [
     ('hive', '4.0.1',
      'https://archive.apache.org/dist/hive/hive-4.0.1/apache-hive-4.0.1-bin.tar.gz', 'sha256'),
 ]
-# The Java major versions are fixed; Adoptium selects current GA patch releases.
+# The Java major version is fixed; Adoptium selects current GA patch releases.
 # Exact release/URL/checksum metadata is recorded beside each installed runtime.
-JAVA_MAJORS = (8, 17)
+JAVA_MAJORS = (8,)
 
 
 def read_small(url):

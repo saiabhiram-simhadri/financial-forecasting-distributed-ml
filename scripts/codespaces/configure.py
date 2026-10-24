@@ -26,7 +26,7 @@ def configure(state):
     hive_conf = state / 'conf' / 'hive'
     for folder in (conf, hive_conf, state / 'logs' / 'hadoop', state / 'logs' / 'hive',
                    state / 'pids', state / 'hdfs' / 'namenode', state / 'hdfs' / 'datanode',
-                   state / 'metastore', state / 'events', state / 'tmp' / 'hive',
+                   state / 'metastore', state / 'tmp' / 'hive',
                    state / 'yarn-local', state / 'yarn-logs'):
         folder.mkdir(parents=True, exist_ok=True)
     # Retain distribution logging defaults when using a separate persistent config.

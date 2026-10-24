@@ -2,6 +2,8 @@
 
 Status: implementation ready; full-stack execution and screenshots pending.
 
+For the first six Hadoop questions, follow the [exact Step 5 screenshot checklist](EXECUTION.md#step-5-screenshot-checklist-exactly-what-to-put-under-each-question). It specifies code, saved output commands, screenshot filenames and interpretation for each answer.
+
 ## 01. Create a directory in HDFS
 
 scripts/run_hadoop.sh creates a run-specific HDFS raw directory and uploads bank.csv with hdfs dfs -put. Capture mkdir/put/ls and record the RAW_PATH printed at the end. Validate the CSV first.

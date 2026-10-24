@@ -4,11 +4,9 @@ __pycache__/
 *.pyc
 data/
 artifacts/
-spark-warehouse/
 metastore_db/
 derby.log
 *.log
-.ipynb_checkpoints/
 
 # Codespaces runtimes, HDFS blocks, embedded Hive catalog and installers
 .codespaces-state/

@@ -11,7 +11,8 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'src'))
 from banklib import COLUMNS, read_bank
-from spark_common import save_json
+def save_json(path, data):
+    Path(path).write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
 
 
 def data_metadata(path):
@@ -34,20 +35,11 @@ def data_metadata(path):
 
 
 def verify(work):
-    from pyspark.sql import functions as F
-    from spark_common import session
-    required = [
-        'input.json', 'hive-counts.tsv', 'eda/01_quality.json', 'eda/07_job_counts.png',
-        'eda/10_credit_default_counts.png', 'train/02_preprocessing.json', 'train/06_metrics.json',
-        'train/08_coefficients.json', 'parallel/05_benchmark.json',
-        'parallel/03_04_partitioned_model.json', 'parallel/06_scheduled_tasks.json',
-        'stream/query_progress.jsonl',
-    ]
-    required += [f'logs/mapreduce-{task}.tsv' for task in (
-        'balance_by_job', 'housing_by_education', 'contacts_by_month',
-        'duration_by_poutcome', 'balance_by_age')]
-    required += ['logs/hive-analysis.log', 'logs/hive-schema.log', 'logs/hive-ingestion.log']
-    for stage in ('prepare', 'hadoop', 'hive', 'eda', 'train', 'parallel', 'stream'):
+    required = ['input.json', 'hive-counts.tsv', 'logs/hive-ingestion.log',
+                'logs/hive-schema.log', 'logs/hive-analysis.log']
+    from banklib import TASKS
+    required += [f'logs/mapreduce-{task}.tsv' for task in TASKS]
+    for stage in ('prepare', 'hadoop', 'hive'):
         if not (work / f'.{stage}-complete').is_file():
             raise ValueError(f'Stage {stage} has not completed successfully')
     for relative in required:
@@ -55,97 +47,58 @@ def verify(work):
         if not path.is_file() or not path.stat().st_size:
             raise ValueError(f'Missing/empty required output: {path}')
     metadata = json.loads((work / 'input.json').read_text())
-    hive_counts = {}
+    counts = {}
     for line in (work / 'hive-counts.tsv').read_text().splitlines():
         fields = line.split('\t')
         if len(fields) == 2 and fields[0] in ('raw', 'typed'):
-            hive_counts[fields[0]] = int(fields[1])
-    assert hive_counts == {'raw': metadata['rows'], 'typed': metadata['rows']}, hive_counts
-    assert json.loads((work / 'eda' / '01_quality.json').read_text())['rows'] == metadata['rows']
-    emitted = sum(1 for p in (work / 'replay-input').glob('*.json')
-                  for line in p.read_text().splitlines() if line.strip())
-    assert emitted == min(300, metadata['rows']), emitted
-    spark = session('codespaces-output-verification', partitions=2)
-    try:
-        predictions = spark.read.parquet(str(work / 'stream' / 'predictions'))
-        count = predictions.count()
-        unique = predictions.select('event_id').distinct().count()
-        assert count == unique == emitted, (count, unique, emitted)
-        assert predictions.filter(F.col('prediction').isNull()).count() == 0
-        predictions.select('event_id', 'job', 'prediction', 'probability').orderBy('event_id').show(20, False)
-    finally:
-        spark.stop()
-    progress = [json.loads(line) for line in (work / 'stream' / 'query_progress.jsonl').read_text().splitlines() if line.strip()]
-    windows = {}
-    for name in ('window_10s', 'window_60s'):
-        samples = [p for p in progress if p['query_name'] == name]
-        assert samples, f'No recorded progress for {name}'
-        windows[name] = {
-            'recorded_batches': [p['batchId'] for p in samples],
-            'watermarks': [p.get('eventTime', {}).get('watermark') for p in samples],
-            'max_dropped_in_one_recorded_batch': max(
-                (sum(s.get('numRowsDroppedByWatermark', 0) for s in p.get('stateOperators', []))
-                 for p in samples), default=0),
-        }
-    resources = {}
-    for stage in ('eda', 'train', 'parallel', 'stream'):
-        samples = json.loads((work / stage / 'resource_samples.json').read_text())
-        resources[stage] = {
-            'samples': len(samples),
-            'peak_python_rss_bytes': max((p['python_rss_bytes'] for p in samples), default=0),
-            'peak_python_cpu_percent': max((p['python_cpu_percent'] for p in samples), default=0),
-            'peak_local_children_rss_bytes': max(
-                (sum(c['rss_bytes'] for c in p['local_children']) for p in samples), default=0),
-        }
+            counts[fields[0]] = int(fields[1])
+    expected = {'raw': metadata['rows'], 'typed': metadata['rows']}
+    if counts != expected:
+        raise ValueError(f'Hive counts {counts}; expected {expected}')
+    for task in TASKS:
+        for line in (work / f'logs/mapreduce-{task}.tsv').read_text().splitlines():
+            fields = line.split('\t')
+            if len(fields) != 4 or int(fields[2]) < 0:
+                raise ValueError(f'Invalid MapReduce output for {task}: {line}')
     save_json(work / 'run-check.json', {
-        'data': metadata, 'hive_counts': hive_counts, 'emitted_events': emitted,
-        'predictions': count, 'unique_prediction_ids': unique, 'windows': windows,
-        'resources': resources,
-        'model_metrics': json.loads((work / 'train' / '06_metrics.json').read_text()),
-        'parallel_results': json.loads((work / 'parallel' / '05_benchmark.json').read_text()),
-        'limitations': [
-            'One host; not multi-machine distributed execution.',
-            'Progress sampling may omit fast batches; no complete late-drop total is asserted.',
-            'Zero recorded drops must be reported honestly.',
-            'Year and loan amounts are unavailable; streaming timestamps are simulated.',
-            'Screenshots and measured written answers must still be completed.',
-        ],
+        'data': metadata, 'hive_counts': counts, 'mapreduce_tasks': list(TASKS),
+        'limitations': ['No year field: year-over-year contacts cannot be computed.',
+                        'Screenshots and written interpretations require manual completion.'],
     })
     print((work / 'run-check.json').read_text())
     print('RUN_OUTPUT_CHECK_OK')
 
 
 def package(work):
-    if not (work / 'run-check.json').is_file():
+    if not (work / '.verify-complete').is_file():
         raise ValueError('Complete verify first')
     archive = work / 'submission.zip'
     if archive.exists():
-        raise ValueError('submission.zip already exists; preserve it before producing a new snapshot')
+        raise ValueError('submission.zip already exists; preserve it before creating another')
     selected = set()
-    for name in ('src', 'scripts', 'mapreduce', 'hive', 'tests', 'docs', 'notebooks', 'submissions', '.devcontainer'):
+    for name in ('src', 'scripts', 'mapreduce', 'hive', 'tests', 'docs', 'submissions', '.devcontainer'):
         selected.update(p for p in (ROOT / name).rglob('*')
                         if p.is_file() and '__pycache__' not in p.parts and p.suffix != '.pyc')
     selected.update(ROOT.glob('*.docx'))
-    selected.update(ROOT / name for name in ('README.md', 'requirements-remote.txt', 'project_rubric.txt'))
+    selected.update(ROOT / name for name in ('README.md', 'project_rubric.txt'))
     with zipfile.ZipFile(archive, 'w', compression=zipfile.ZIP_DEFLATED) as output:
         for path in sorted(selected):
-            output.write(path, 'project/' + str(path.relative_to(ROOT)).replace(os.sep, '/'))
+            output.write(path, 'project/' + path.relative_to(ROOT).as_posix())
         for path in work.rglob('*'):
             if not path.is_file() or path == archive:
                 continue
             relative = path.relative_to(work)
-            # Exclude persisted models, checkpoints, replay inputs and failed-stage trees.
-            allowed = (relative.parts[0] in ('logs', 'screenshots')
-                       or (len(relative.parts) == 1 and path.suffix in ('.json', '.tsv'))
-                       or (len(relative.parts) == 2 and relative.parts[0] in ('eda', 'train', 'parallel', 'stream')
-                           and path.suffix in ('.json', '.jsonl', '.csv', '.png')))
+            allowed = ((relative.parts[0] == 'logs' and
+                        (path.name.startswith(('hadoop', 'hive', 'mapreduce-', 'hdfs-', 'input', 'validation', 'verification'))))
+                       or relative.parts[0] == 'screenshots'
+                       or (len(relative.parts) == 1 and path.suffix in ('.json', '.tsv')))
             if allowed and path.stat().st_size <= 8 * 1024 * 1024:
-                output.write(path, 'results/' + str(relative).replace(os.sep, '/'))
-        state = ROOT / '.codespaces-state'
-        for marker in (state / 'tools').glob('*/.bank-install.json'):
-            output.write(marker, f'runtime-versions/{marker.parent.name}.json')
+                output.write(path, 'results/' + relative.as_posix())
+        for name in ('java8', 'hadoop', 'hive'):
+            marker = ROOT / '.codespaces-state' / 'tools' / name / '.bank-install.json'
+            if marker.is_file():
+                output.write(marker, f'runtime-versions/{name}.json')
     print(f'PACKAGE_READY: {archive} ({archive.stat().st_size} bytes)')
-    print('Templates/unexecuted notebooks are not completed evidence. Finish answers/screenshots before submitting.')
     return archive
 
 

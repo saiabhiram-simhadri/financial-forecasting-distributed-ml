@@ -1,5 +1,5 @@
 {
-  "name": "Banking analytics — Codespaces",
+  "name": "Hadoop and Hive \u2014 Codespaces",
   "image": "mcr.microsoft.com/devcontainers/python:1-3.11-bookworm",
   "hostRequirements": {
     "cpus": 2,
@@ -7,26 +7,16 @@
     "storage": "32gb"
   },
   "forwardPorts": [
-    4040,
     8088,
-    9870,
-    18080
+    9870
   ],
   "portsAttributes": {
-    "4040": {
-      "label": "Spark live UI",
-      "onAutoForward": "notify"
-    },
     "8088": {
       "label": "YARN ResourceManager",
       "onAutoForward": "notify"
     },
     "9870": {
       "label": "HDFS NameNode",
-      "onAutoForward": "notify"
-    },
-    "18080": {
-      "label": "Spark History Server",
       "onAutoForward": "notify"
     }
   },

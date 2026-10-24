@@ -1,6 +1,6 @@
-"""Dependency-free CSV contract shared by MapReduce, replay, and tests."""
+"""Dependency-free CSV contract used by Hadoop MapReduce, validation, and tests."""
 import csv
-import math
+
 from pathlib import Path
 
 NUMERIC = ['age', 'balance', 'day', 'duration', 'campaign', 'pdays', 'previous']

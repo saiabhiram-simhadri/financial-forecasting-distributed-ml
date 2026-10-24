@@ -1,5 +1,5 @@
--- Run with beeline --hivevar RAW_PATH=/user/you/banking/raw/RUN_ID -f hive/01_tables.hql
--- RAW_PATH must contain only the semicolon-delimited bank.csv uploaded by run_hadoop.sh.
+-- Run with beeline --hivevar RAW_PATH=/user/you/banking/hive-raw/RUN_ID -f hive/01_tables.hql
+-- RAW_PATH must contain only the headerless semicolon-delimited bank.csv prepared by the Hive runner.
 CREATE DATABASE IF NOT EXISTS banking_data;
 USE banking_data;
 
@@ -15,10 +15,10 @@ ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
 WITH SERDEPROPERTIES ('separatorChar'=';', 'quoteChar'='"')
 STORED AS TEXTFILE
 LOCATION '${hivevar:RAW_PATH}'
-TBLPROPERTIES ('skip.header.line.count'='1');
+TBLPROPERTIES ('skip.header.line.count'='0');
 
 -- Repoint only the external staging metadata on subsequent runs; raw files are preserved.
-ALTER TABLE client_info_raw SET LOCATION '${hivevar:RAW_PATH}';
+ALTER TABLE client_info_raw SET TBLPROPERTIES ('skip.header.line.count'='0'); ALTER TABLE client_info_raw SET LOCATION '${hivevar:RAW_PATH}';
 
 CREATE TABLE IF NOT EXISTS client_info (
   age INT, job STRING, marital STRING, education STRING, `default` STRING,

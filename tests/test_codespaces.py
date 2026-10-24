@@ -70,6 +70,37 @@ class CodespacesTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 inspection.data_metadata(path)
 
+    def test_verify_and_package_only_hadoop_hive(self):
+        import zipfile
+        from banklib import TASKS
+        with tempfile.TemporaryDirectory() as directory:
+            work = Path(directory)
+            (work / 'logs').mkdir()
+            for stage in ('prepare', 'hadoop', 'hive'):
+                (work / f'.{stage}-complete').touch()
+            inspection.save_json(work / 'input.json', {'rows': 2})
+            (work / 'hive-counts.tsv').write_text('raw\t2\ntyped\t2\n')
+            for name in ('hive-ingestion', 'hive-schema', 'hive-analysis'):
+                (work / 'logs' / f'{name}.log').write_text('actual output')
+            for task in TASKS:
+                (work / 'logs' / f'mapreduce-{task}.tsv').write_text('group\t20\t2\t10\n')
+            inspection.verify(work)
+            self.assertEqual(json.loads((work / 'run-check.json').read_text())['hive_counts'],
+                             {'raw': 2, 'typed': 2})
+            (work / '.verify-complete').touch()
+            (work / 'logs' / 'train.log').write_text('old unrelated output')
+            (work / 'train').mkdir()
+            (work / 'train' / 'metrics.json').write_text('{}')
+            archive = inspection.package(work)
+            with zipfile.ZipFile(archive) as package:
+                names = package.namelist()
+                self.assertIn('results/hive-counts.tsv', names)
+                self.assertNotIn('results/logs/train.log', names)
+                self.assertNotIn('results/train/metrics.json', names)
+            (work / 'hive-counts.tsv').write_text('raw\t3\ntyped\t2\n')
+            with self.assertRaises(ValueError):
+                inspection.verify(work)
+
     def test_checksum_formats_and_rejected_metadata(self):
         digest = 'a' * 128
         self.assertEqual(runtime.checksum_from_text(f'SHA512 (hadoop.tgz) = {digest}', 'sha512'), digest)

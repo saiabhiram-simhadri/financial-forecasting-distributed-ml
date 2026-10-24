@@ -13,7 +13,6 @@ if [[ ! -f "$BANK_STATE/setup-complete" ]]; then
 fi
 export BANK_PY="$BANK_STATE/venv/bin/python"
 export BANK_JAVA8="$BANK_STATE/tools/java8"
-export BANK_JAVA17="$BANK_STATE/tools/java17"
 export BANK_HADOOP="$BANK_STATE/tools/hadoop"
 export BANK_HIVE="$BANK_STATE/tools/hive"
 export HADOOP_HOME="$BANK_HADOOP"
@@ -35,14 +34,9 @@ export JAVA_HOME="$BANK_JAVA8"
 export PATH="$BANK_STATE/venv/bin:$BANK_HADOOP/bin:$BANK_HIVE/bin:$PATH"
 export PYTHONPATH="$BANK_ROOT/src:$BANK_ROOT/tests:$BANK_ROOT/scripts"
 export TMPDIR="$BANK_STATE/tmp"
-export MPLBACKEND=Agg
-export SPARK_LOCAL_IP=127.0.0.1
-export SPARK_LOCAL_DIRS="$BANK_STATE/tmp"
 export BANK_DATA="$BANK_ROOT/data/bank.csv"
-export BANK_EVENT_URI="file://$BANK_STATE/events"
-export BANK_SPARK="$("$BANK_PY" -c 'from pathlib import Path; import pyspark; print(Path(pyspark.__file__).parent)')"
 export HADOOP_STREAMING_JAR="$BANK_HADOOP/share/hadoop/tools/lib/hadoop-streaming-3.3.6.jar"
-unset CLASSPATH HADOOP_CLASSPATH SPARK_DIST_CLASSPATH
+unset CLASSPATH HADOOP_CLASSPATH
 
 bank_new_run() {
   mkdir -p "$BANK_ROOT/artifacts/codespaces"
@@ -79,16 +73,5 @@ bank_log() {
 bank_hive() {
   env JAVA_HOME="$BANK_JAVA8" HADOOP_HEAPSIZE=256 HADOOP_HEAPSIZE_MAX=256 \
     "$BANK_HIVE/bin/beeline" -u 'jdbc:hive2://127.0.0.1:10000/default' \
-    -n "$(id -un)" -p '' --force=false "$@"
-}
-
-bank_spark() {
-  env -u SPARK_HOME -u HADOOP_CONF_DIR -u HIVE_CONF_DIR -u HADOOP_CLASSPATH \
-    -u CLASSPATH -u SPARK_DIST_CLASSPATH JAVA_HOME="$BANK_JAVA17" \
-    PYSPARK_PYTHON="$BANK_PY" PYSPARK_DRIVER_PYTHON="$BANK_PY" \
-    "$BANK_SPARK/bin/spark-submit" --master 'local[2]' --driver-memory 1g \
-    --conf spark.hadoop.fs.defaultFS=file:/// \
-    --conf "spark.sql.warehouse.dir=$BANK_STATE/warehouse" \
-    --conf spark.eventLog.enabled=true --conf "spark.eventLog.dir=$BANK_EVENT_URI" \
-    --py-files "$BANK_ROOT/src/banklib.py" "$@"
+    -n "$(id -un)" -p '' --force=false --hiveconf mapreduce.job.user.classpath.first=true --hiveconf hive.vectorized.execution.enabled=false "$@"
 }

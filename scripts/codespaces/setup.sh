@@ -11,7 +11,6 @@ export TMPDIR="$state/tmp"
 if [[ ! -x "$state/venv/bin/python" ]]; then
   "$bootstrap_python" -m venv "$state/venv"
 fi
-"$state/venv/bin/python" -m pip install --no-cache-dir -r requirements-remote.txt 2>&1 | tee -a "$state/logs/setup.log"
 "$state/venv/bin/python" scripts/codespaces/configure.py --state "$state"
 touch "$state/setup-complete"
 printf '%s\n' 'SETUP_COMPLETE. Next: bash scripts/codespaces/run.sh prepare'

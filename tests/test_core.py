@@ -2,7 +2,6 @@
 import csv
 import importlib.util
 import io
-import json
 from pathlib import Path
 import sys
 import tempfile
@@ -12,7 +11,6 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'src'))
 sys.path.insert(0, str(ROOT / 'scripts'))
 from banklib import COLUMNS, TASKS, age_group, normalize, read_bank
-from replay import replay
 
 
 def module(name, path):
@@ -105,22 +103,6 @@ class ContractTests(unittest.TestCase):
         reducer.reduce_rows(mapped.getvalue().splitlines(), reduced)
         self.assertEqual(reduced.getvalue().strip().split('\t')[1:], ['0', '0', 'NULL'])
 
-    def test_bounded_atomic_replay_and_late_events(self):
-        from datetime import datetime
-        with tempfile.TemporaryDirectory() as directory:
-            source = Path(directory) / 'bank.csv'
-            fixture(source, size=30)
-            target = Path(directory) / 'events'
-            self.assertEqual(replay(source, target, rows=25, chunk_size=5, interval=0), 25)
-            files = sorted(target.glob('*.json'))
-            self.assertEqual(len(files), 5)
-            events = [json.loads(line) for f in files for line in f.read_text().splitlines()]
-            self.assertEqual(len({r['event_id'] for r in events}), 25)
-            self.assertFalse(list(target.glob('*.tmp')))
-            times = [datetime.fromisoformat(r['event_time']) for r in events]
-            self.assertLess(times[11], times[9])  # deliberately beyond-watermark-late event
-            with self.assertRaises(ValueError):
-                replay(source, target, interval=0)
 
 
 if __name__ == '__main__':

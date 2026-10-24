@@ -5,7 +5,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 source scripts/codespaces/env.sh
 
 usage() {
-  printf '%s\n' 'Usage: services.sh hadoop|hive|history|stop-hive|stop-hadoop|stop|status'
+  printf '%s\n' 'Usage: services.sh hadoop|hive|stop-hive|stop-hadoop|stop|status'
 }
 
 owned_process() {
@@ -129,7 +129,7 @@ start_hive() {
       > "$BANK_STATE/logs/hive/schema-info.log" 2>&1
   fi
   nohup env HADOOP_HEAPSIZE_MAX=768 HADOOP_HEAPSIZE=768 \
-    "$BANK_HIVE/bin/hiveserver2" --hiveconf hive.root.logger=INFO,console \
+    HADOOP_CLIENT_OPTS="${HADOOP_CLIENT_OPTS:-} -Dhive.root.logger=INFO,console" "$BANK_HIVE/bin/hiveserver2" \
     > "$BANK_STATE/logs/hive/server.out" 2>&1 < /dev/null &
   echo "$!" > "$pidfile"
   local ready=false
@@ -161,38 +161,14 @@ stop_hadoop() {
   stop_owned "$BANK_STATE/pids/hadoop-banking-namenode.pid" org.apache.hadoop.hdfs.server.namenode.NameNode
 }
 
-start_history() {
-  local pidfile="$BANK_STATE/pids/history.pid"
-  if [[ -f "$pidfile" ]] && owned_process "$(cat "$pidfile")" 'org.apache.spark.deploy.history.HistoryServer'; then
-    printf '%s\n' 'History Server already running on port 18080.'
-    return
-  fi
-  nohup env -u SPARK_HOME JAVA_HOME="$BANK_JAVA17" SPARK_DAEMON_MEMORY=512m \
-    SPARK_HISTORY_OPTS="-Dspark.history.fs.logDirectory=$BANK_EVENT_URI -Dspark.history.ui.port=18080" \
-    "$BANK_SPARK/bin/spark-class" org.apache.spark.deploy.history.HistoryServer \
-    > "$BANK_STATE/logs/history.out" 2>&1 < /dev/null &
-  echo "$!" > "$pidfile"
-  local ready=false
-  for _ in {1..30}; do
-    if curl --max-time 3 -fsS http://127.0.0.1:18080/ >/dev/null 2>&1; then
-      ready=true
-      break
-    fi
-    sleep 2
-  done
-  [[ "$ready" == true ]] || { printf '%s\n' 'History failed; inspect .codespaces-state/logs/history.out' >&2; return 1; }
-  printf '%s\n' 'HISTORY_READY: open private forwarded port 18080.'
-}
 
 case "${1:-}" in
   hadoop) start_hadoop ;;
   hive) start_hive ;;
-  history) start_history ;;
   stop-hive) stop_hive ;;
   stop-hadoop) stop_hive; stop_hadoop ;;
   stop)
     stop_hive
-    stop_owned "$BANK_STATE/pids/history.pid" 'org.apache.spark.deploy.history.HistoryServer'
     stop_hadoop
     printf '%s\n' 'Project services stopped; persistent files retained.'
     ;;
