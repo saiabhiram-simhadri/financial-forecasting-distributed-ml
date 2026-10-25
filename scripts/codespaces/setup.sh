@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Explicit, Codespaces-only installation. Never run this on the Windows workstation.
+# Install and configure the Codespaces runtime.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 bash scripts/codespaces/check_host.sh

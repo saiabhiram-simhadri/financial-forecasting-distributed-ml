@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Real Hadoop Streaming execution; Codespaces runner can safely resume completed jobs.
+# Run five Hadoop Streaming summaries, reusing completed jobs in resume mode.
 set -euo pipefail
 : "${BANK_CSV:?Set BANK_CSV to an existing local CSV on the Hadoop client}"
 : "${HADOOP_STREAMING_JAR:?Set the installed Hadoop Streaming jar}"
@@ -37,4 +37,4 @@ for task in balance_by_job housing_by_education contacts_by_month duration_by_po
   fi
   hdfs dfs -cat "$output/part-*"
 done
-printf 'Hive RAW_PATH: %s\n' "$INPUT"
+printf 'Hadoop input: %s\n' "$INPUT"

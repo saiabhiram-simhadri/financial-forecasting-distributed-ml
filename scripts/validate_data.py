@@ -1,4 +1,4 @@
-"""Read-only, constant-memory validation; no third-party packages."""
+"""Validate CSV records and summarize labels and missing values."""
 import argparse
 import collections
 from pathlib import Path
@@ -19,8 +19,7 @@ def main():
         missing.update(c for c in NUMERIC if row[c] is None)
     if not count:
         raise ValueError('Empty dataset')
-    print({'rows': count, 'labels': dict(labels), 'missing_numeric': dict(missing),
-           'year_available': False, 'loan_amount_available': False})
+    print({'rows': count, 'labels': dict(labels), 'missing_numeric': dict(missing)})
 
 
 if __name__ == '__main__':

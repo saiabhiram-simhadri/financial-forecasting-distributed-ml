@@ -1,32 +1,33 @@
-"""Codespaces data guards, output verification and small submission packaging."""
+"""Validate run inputs, verify outputs, and package Hadoop/Hive results."""
 import argparse
 from collections import Counter
+import csv
 import hashlib
 import json
-import os
 from pathlib import Path
 import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'src'))
-from banklib import COLUMNS, read_bank
+from banklib import COLUMNS, TASKS, read_bank
+
+
 def save_json(path, data):
     Path(path).write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
 
 
 def data_metadata(path):
-    import csv
     with path.open(encoding='utf-8-sig', newline='') as handle:
         if next(csv.reader(handle, delimiter=';')) != COLUMNS:
-            raise ValueError('Use the canonical semicolon bank.csv for Hadoop/Hive')
+            raise ValueError('Expected the semicolon-delimited bank.csv schema')
     labels = Counter()
     count = 0
     for row in read_bank(path):
         labels[row['y']] += 1
         count += 1
     if not count or not labels['yes'] or not labels['no']:
-        raise ValueError('Need nonempty real data with both target classes')
+        raise ValueError('Dataset must contain both yes and no subscription labels')
     digest = hashlib.sha256()
     with path.open('rb') as handle:
         for block in iter(lambda: handle.read(1024 * 1024), b''):
@@ -37,7 +38,6 @@ def data_metadata(path):
 def verify(work):
     required = ['input.json', 'hive-counts.tsv', 'logs/hive-ingestion.log',
                 'logs/hive-schema.log', 'logs/hive-analysis.log']
-    from banklib import TASKS
     required += [f'logs/mapreduce-{task}.tsv' for task in TASKS]
     for stage in ('prepare', 'hadoop', 'hive'):
         if not (work / f'.{stage}-complete').is_file():

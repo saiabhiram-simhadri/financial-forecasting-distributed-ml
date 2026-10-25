@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One stage at a time; all large work executes inside the Codespace.
+# Run Hadoop/Hive workflow stages in Codespaces.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 source scripts/codespaces/env.sh
@@ -15,7 +15,7 @@ if [[ "$stage" == all ]]; then
   for next in prepare hadoop hive verify; do
     bash scripts/codespaces/run.sh "$next"
   done
-  printf '%s\n' 'Execution checks finished. Complete screenshots/answers, then package.'
+  printf '%s\n' 'Verification complete. Run the package stage to export results.'
   exit 0
 fi
 

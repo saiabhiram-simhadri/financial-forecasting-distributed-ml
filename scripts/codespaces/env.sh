@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Source this file; path defaults are generated from the checkout, not lab placeholders.
+# Shared paths and helpers for Codespaces scripts.
 BANK_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 export BANK_ROOT
 if [[ "${CODESPACES:-}" != true || "$BANK_ROOT" != /workspaces/* ]]; then
@@ -66,7 +66,7 @@ bank_log() {
   local label="$1"
   shift
   printf '\nAttempt %s\n' "$(date -u +%FT%TZ)" >> "$BANK_WORK/logs/$label.log"
-  # The calling entrypoints enable pipefail, so tee cannot conceal command failure.
+  # Callers use pipefail to preserve failures through tee.
   "$@" 2>&1 | tee -a "$BANK_WORK/logs/$label.log"
 }
 

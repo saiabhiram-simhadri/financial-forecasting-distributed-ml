@@ -1,4 +1,4 @@
-"""Dependency-free structural checks for Python source and local documentation links."""
+"""Check Python syntax and local documentation links."""
 import ast
 from pathlib import Path
 import re

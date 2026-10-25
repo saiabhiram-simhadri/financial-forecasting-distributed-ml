@@ -1,4 +1,4 @@
-"""Fast tests use only the standard library and tiny in-memory synthetic rows."""
+"""Tests for CSV validation and MapReduce summaries."""
 import csv
 import importlib.util
 import io
@@ -9,7 +9,6 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'src'))
-sys.path.insert(0, str(ROOT / 'scripts'))
 from banklib import COLUMNS, TASKS, age_group, normalize, read_bank
 
 
@@ -102,7 +101,6 @@ class ContractTests(unittest.TestCase):
         mapper.run(io.StringIO(text.getvalue()), mapped, 'balance_by_job')
         reducer.reduce_rows(mapped.getvalue().splitlines(), reduced)
         self.assertEqual(reduced.getvalue().strip().split('\t')[1:], ['0', '0', 'NULL'])
-
 
 
 if __name__ == '__main__':

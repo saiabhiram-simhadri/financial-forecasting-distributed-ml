@@ -1,4 +1,4 @@
-"""Small offline tests for Codespaces setup configuration and data guards."""
+"""Tests for runtime configuration, input checks, and result packaging."""
 import importlib.util
 import io
 import json

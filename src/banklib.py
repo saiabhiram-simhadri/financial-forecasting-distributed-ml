@@ -1,6 +1,5 @@
-"""Dependency-free CSV contract used by Hadoop MapReduce, validation, and tests."""
+"""CSV parsing, validation, and MapReduce aggregation rules."""
 import csv
-
 from pathlib import Path
 
 NUMERIC = ['age', 'balance', 'day', 'duration', 'campaign', 'pdays', 'previous']
@@ -61,7 +60,7 @@ def read_bank(path):
 
 
 def sufficient_stat(row, task):
-    """key, sum, nonmissing count; numeric sums retain exact integer precision."""
+    """Return the grouping key, integer sum, and nonmissing count."""
     if task == 'balance_by_job':
         key, value = row['job'], row['balance']
     elif task == 'housing_by_education':

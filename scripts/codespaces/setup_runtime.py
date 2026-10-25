@@ -1,4 +1,4 @@
-"""Install checksummed archives inside a Codespace, never on a local workstation."""
+"""Install verified Java, Hadoop, and Hive archives in Codespaces."""
 import argparse
 import hashlib
 import json
@@ -10,7 +10,6 @@ import shutil
 import tarfile
 import tempfile
 import time
-import urllib.parse
 import urllib.request
 
 MAX_DOWNLOAD = 1200 * 1024 * 1024
@@ -20,8 +19,7 @@ APACHE = [
     ('hive', '4.0.1',
      'https://archive.apache.org/dist/hive/hive-4.0.1/apache-hive-4.0.1-bin.tar.gz', 'sha256'),
 ]
-# The Java major version is fixed; Adoptium selects current GA patch releases.
-# Exact release/URL/checksum metadata is recorded beside each installed runtime.
+# Adoptium supplies the latest Java 8 patch; install markers record the release.
 JAVA_MAJORS = (8,)
 
 
@@ -44,7 +42,6 @@ def checksum_from_text(text, algorithm):
 
 def download(url, path, expected, algorithm):
     partial = path.with_suffix(path.suffix + '.partial')
-    # A failed transfer is retried from the start, never trusted as an installation.
     for attempt in range(3):
         digest = hashlib.new(algorithm)
         size = 0
@@ -75,7 +72,6 @@ def unpack(archive_path, destination):
     if destination.exists():
         raise ValueError(f'Incomplete/existing destination: {destination}; preserve it before retrying')
     parent = destination.parent
-    # Cleanup only our own temporary extraction directory, not existing runtimes.
     with tempfile.TemporaryDirectory(prefix='extract-', dir=parent) as temporary:
         temporary = Path(temporary)
         with tarfile.open(archive_path, 'r:gz') as archive:
@@ -106,7 +102,7 @@ def install(state, name, version, url, checksum, algorithm):
     marker.write_text(json.dumps({'name': name, 'version': version, 'url': url,
                                  'checksum': checksum, 'algorithm': algorithm, 'download_bytes': size},
                                 indent=2), encoding='utf-8')
-    archive.unlink()  # Delete only this verified installer archive after extraction.
+    archive.unlink()
 
 
 def main():
@@ -149,7 +145,7 @@ def main():
             continue
         checksum = checksum_from_text(read_small(url + '.' + algorithm).decode(), algorithm)
         install(state, name, version, url, checksum, algorithm)
-    print('Verified Java/Hadoop/Hive archives installed. No daemon was started.', flush=True)
+    print('Java, Hadoop, and Hive installed.', flush=True)
 
 
 if __name__ == '__main__':

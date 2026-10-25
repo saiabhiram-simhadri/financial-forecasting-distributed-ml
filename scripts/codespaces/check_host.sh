@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Read-only host checks. Does not install anything or start services.
+# Check Codespaces platform and resources.
 set -euo pipefail
 if [[ "${CODESPACES:-}" != true || "$PWD" != /workspaces/* || "$(uname -s)" != Linux ]]; then
   printf '%s\n' 'Use a GitHub Codespace opened at this repository root.' >&2
@@ -13,4 +13,3 @@ python3 -c 'import sys; assert sys.version_info >= (3, 11), "Use the supplied Py
 df -h .
 free -h
 printf '%s\n' 'Host check complete. Next: bash scripts/codespaces/setup.sh'
-printf '%s\n' 'No software has been installed; large downloads are explicit in setup.sh.'

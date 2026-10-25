@@ -31,7 +31,7 @@ SELECT 'H09 age balance correlation' AS question;
 SELECT CORR(age, balance) AS age_balance_pearson_r FROM client_info;
 
 SELECT 'H10 year-over-year contacts: not identifiable' AS question;
-SELECT 'bank.csv has day and month but no year. Supply observed contact_year/contact_date before computing YoY; do not infer year from row order.' AS limitation;
+SELECT 'bank.csv contains day and month but no year; year-over-year contact counts are unavailable.' AS limitation;
 
 SELECT 'H11 education balance anomaly candidates (cross-sectional, not yearly trend)' AS question;
 WITH education_summary AS (
@@ -52,8 +52,7 @@ SELECT e.*, CASE WHEN a.std_of_group_means > 0
        THEN 'review' ELSE 'within_descriptive_threshold' END AS review_flag
 FROM education_summary e CROSS JOIN across_groups a
 ORDER BY avg_balance DESC;
--- Small category counts and skew can mask anomalies. These are review candidates,
--- not fraud findings; account balance is described as average yearly balance by UCI.
+-- Group-mean z-scores are descriptive; small categories and skew affect interpretation.
 
 SELECT 'H12 previous outcome and current success' AS question;
 SELECT poutcome, COUNT(*) AS clients,

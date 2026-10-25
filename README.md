@@ -1,27 +1,34 @@
-# Hadoop and Hive Banking Analysis
+# Banking Analytics with Hadoop and Spark
 
-Bank-marketing analysis using HDFS, Python MapReduce, and Hive SQL. The implementation covers customer balance summaries, loan distributions, campaign activity, and subscription outcomes.
+A banking analytics project covering customer and campaign analysis, term-deposit prediction, and simulated streaming using Hadoop, Hive, and Apache Spark.
 
-## Implementation
+## Overview
 
-- Five MapReduce jobs with sum/count combiners and grouped summaries.
-- CSV staging in Hive and conversion to a typed ORC table.
-- HiveQL queries for customer segments, campaign outcomes, and descriptive statistics.
-- Codespaces runtime configuration, input validation, output verification, and result packaging.
-- Offline tests for aggregation, ingestion guards, downloads, and runtime configuration.
+- Hadoop/Hive implementation includes five MapReduce summaries, typed ORC tables, and analytical SQL queries.
+- Four Spark notebooks cover exploratory analysis, predictive modeling, streaming predictions, and data parallelism.
+- Hadoop runs in single-host pseudo-distributed mode. Spark notebooks use local execution. The latest script cleanup has not been rerun against live Hadoop/Hive services.
 
-## Project files
+## What the project covers
 
-| Directory | Content |
+| Area | Work |
 |---|---|
-| [mapreduce](mapreduce/) | Python mapper and reducer |
-| [src](src/) | CSV parsing and aggregation logic |
-| [hive](hive/) | Table definitions and analytical queries |
-| [scripts](scripts/) | Validation, execution, and packaging utilities |
-| [tests](tests/) | Offline tests |
+| Hadoop and Hive | Store records in HDFS and analyze balances, loans, and campaign outcomes |
+| Spark EDA | Explore customer groups, subscription rates, and contact patterns |
+| Spark ML | Compare Logistic Regression, Decision Tree, and Random Forest for subscription prediction |
+| Structured Streaming | Simulate arriving records, update summaries, and apply a trained model |
+| Data parallelism | Explore partitioning, parallel processing, and resource usage |
 
-[Architecture](docs/project_architecture.md) describes the processing flow. [Analysis](docs/report_hadoop_hive.md) summarizes the implemented calculations.
+Streaming uses a fixed trained model, retraining is separate. These components are separate workflows rather than one deployed production pipeline.
 
-The runtime uses Hadoop 3.3.6, Hive 4.0.1, Java 8, and standard-library Python in a single-host pseudo-distributed environment. Spark work is maintained separately and is outside this repository.
+## Repository
 
-The dataset contains contact records without unique customer identifiers or a year field. Counts represent records, and year-over-year analysis is unavailable. Numerical findings require the corresponding execution outputs; this checkout contains implementation code rather than a completed results report.
+- [notebooks/](notebooks/) — Spark analysis and experiments
+- [mapreduce/](mapreduce/) and [hive/](hive/) — batch processing and SQL
+- [src/](src/) and [scripts/](scripts/) — shared logic, setup, and execution
+- [Analysis reference](docs/report_hadoop_hive.md) — implemented calculations
+
+## Data
+
+Bank-marketing contact records include customer attributes, balances, campaign details, and subscription outcomes. The Hadoop downloader uses [UCI Bank Marketing](https://archive.ics.uci.edu/dataset/222/bank+marketing).
+
+Counts represent records, and the missing year field prevents annual trend analysis. Models using call duration require completed-call information. Runtime data and Hadoop/Hive results are excluded from Git.

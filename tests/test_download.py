@@ -1,4 +1,4 @@
-"""No-network regression tests for UCI archive layouts and size limits."""
+"""Tests for UCI archive layouts and size limits."""
 import io
 from pathlib import Path
 import sys

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Manage only this project's daemons. No SSH daemon, systemd, or sudo is required.
+# Start and stop the project's Hadoop and Hive services.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 source scripts/codespaces/env.sh
@@ -41,7 +41,7 @@ stop_owned() {
     printf 'Process %s did not stop; inspect it before retrying.\n' "$pid" >&2
     return 1
   fi
-  # Stale pidfile only; an unrelated process is never killed.
+  # The PID no longer belongs to this service.
   rm -f "$pidfile"
 }
 
@@ -50,8 +50,7 @@ start_native() {
   local pidfile="$BANK_STATE/pids/hadoop-banking-$role.pid"
   if [[ -f "$pidfile" ]]; then
     if owned_process "$(cat "$pidfile")" "$token"; then return; fi
-    # A persisted pidfile can refer to a reused PID after Codespaces restarts.
-    # Remove only the stale project pidfile, never signal that unrelated PID.
+    # Codespaces restarts can leave pidfiles pointing to reused PIDs.
     rm -f "$pidfile"
   fi
   "$BANK_HADOOP/bin/$binary" --daemon start "$role"
@@ -151,7 +150,7 @@ start_hive() {
     printf '%s\n' 'Hive readiness failed. See .codespaces-state/logs/hive/ready.log and server.out' >&2
     return 1
   fi
-  printf '%s\n' 'HIVE_READY: localhost:10000, one private embedded-Derby owner.'
+  printf '%s\n' 'HIVE_READY: localhost:10000, embedded Derby catalog.'
 }
 
 stop_hadoop() {

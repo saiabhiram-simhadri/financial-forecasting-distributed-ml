@@ -1,4 +1,4 @@
-"""Optional bounded UCI download, intended for the remote compute host only."""
+"""Download bank.csv from the UCI Bank Marketing archive."""
 import argparse
 import hashlib
 import io
@@ -21,10 +21,7 @@ def _read_member(archive, member, maximum):
 
 
 def extract_bank_csv(payload, maximum=MAXIMUM_BYTES):
-    """Accept bank.csv directly or the UCI outer archive containing bank.zip.
-
-    Read only the selected members in memory; never extract unrelated files.
-    """
+    """Read bank.csv from a direct or nested ZIP, with size limits."""
     if len(payload) > maximum:
         raise ValueError('Archive exceeds size limit')
     with zipfile.ZipFile(io.BytesIO(payload)) as archive:
@@ -52,14 +49,14 @@ def main():
     output = Path(args.output)
     if output.exists():
         parser.error('Output already exists; choose a fresh file')
-    request = urllib.request.Request(URL, headers={'User-Agent': 'BankingCourseProject/1.0'})
+    request = urllib.request.Request(URL, headers={'User-Agent': 'BankingAnalysis/1.0'})
     with urllib.request.urlopen(request, timeout=30) as response:
         payload = response.read(MAXIMUM_BYTES + 1)
     data = extract_bank_csv(payload)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_bytes(data)
     print({'source': URL, 'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest(),
-           'note': 'UCI real dataset; review its citation/license on the source page.'})
+           'dataset': 'UCI Bank Marketing'})
 
 
 if __name__ == '__main__':
