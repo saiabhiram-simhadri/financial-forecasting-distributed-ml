@@ -62,8 +62,7 @@ def verify(work):
                 raise ValueError(f'Invalid MapReduce output for {task}: {line}')
     save_json(work / 'run-check.json', {
         'data': metadata, 'hive_counts': counts, 'mapreduce_tasks': list(TASKS),
-        'limitations': ['No year field: year-over-year contacts cannot be computed.',
-                        'Screenshots and written interpretations require manual completion.'],
+        'limitations': ['No year field: year-over-year contacts cannot be computed.'],
     })
     print((work / 'run-check.json').read_text())
     print('RUN_OUTPUT_CHECK_OK')
@@ -76,11 +75,10 @@ def package(work):
     if archive.exists():
         raise ValueError('submission.zip already exists; preserve it before creating another')
     selected = set()
-    for name in ('src', 'scripts', 'mapreduce', 'hive', 'tests', 'docs', 'submissions', '.devcontainer'):
+    for name in ('src', 'scripts', 'mapreduce', 'hive', 'tests', 'docs', '.devcontainer'):
         selected.update(p for p in (ROOT / name).rglob('*')
                         if p.is_file() and '__pycache__' not in p.parts and p.suffix != '.pyc')
-    selected.update(ROOT.glob('*.docx'))
-    selected.update(ROOT / name for name in ('README.md', 'project_rubric.txt'))
+    selected.add(ROOT / 'README.md')
     with zipfile.ZipFile(archive, 'w', compression=zipfile.ZIP_DEFLATED) as output:
         for path in sorted(selected):
             output.write(path, 'project/' + path.relative_to(ROOT).as_posix())

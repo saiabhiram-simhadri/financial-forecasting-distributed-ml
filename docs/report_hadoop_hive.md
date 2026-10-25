@@ -1,137 +1,48 @@
-# Data Analysis and Management using Hadoop & Hive
+# Banking Analysis Implementation
 
-Status: implementation ready; full-stack execution and screenshots pending.
+The analysis uses bank-marketing contact records. This document describes implemented calculations; measured results are stored with individual execution runs.
 
-For the first six Hadoop questions, follow the [exact Step 5 screenshot checklist](EXECUTION.md#step-5-screenshot-checklist-exactly-what-to-put-under-each-question). It specifies code, saved output commands, screenshot filenames and interpretation for each answer.
+## MapReduce summaries
 
-## 01. Create a directory in HDFS
+| Task | Grouping | Calculation |
+|---|---|---|
+| `balance_by_job` | Job | Mean balance and nonmissing count |
+| `housing_by_education` | Education and housing-loan status | Record count, including unknown housing status |
+| `contacts_by_month` | Month and subscription outcome | Contact-record count |
+| `duration_by_poutcome` | Previous campaign outcome | Mean contact duration in seconds |
+| `balance_by_age` | Under 30, 30-60, over 60 | Mean balance and nonmissing count |
 
-scripts/run_hadoop.sh creates a run-specific HDFS raw directory and uploads bank.csv with hdfs dfs -put. Capture mkdir/put/ls and record the RAW_PATH printed at the end. Validate the CSV first.
+The mapper emits grouping keys, sums, and counts. Combiners merge sums and counts; reducers calculate means from the combined totals. Output columns are key, sum, nonmissing count, and mean. Count tasks use the count column.
 
-EVIDENCE PENDING: Execute on the documented environment. Insert screenshots of this question's code and actual output, then add observed values and interpretation. No execution result is claimed by this template.
+Implementation: [mapper](../mapreduce/mapper.py), [reducer](../mapreduce/reducer.py), and [aggregation logic](../src/banklib.py).
 
-## 02. Write a MapReduce program in Python
+## Hive storage
 
-MR01: mapper.py --task balance_by_job; reducer output is key, sum, nonmissing count, mean. Explain why sum/count combiners preserve weighted means. Capture code and all reducer partitions.
+The `banking_data` database contains the external CSV staging table `client_info_raw` and the typed ORC table `client_info`. OpenCSVSerde parses quoted fields. An `INSERT OVERWRITE` operation casts and normalizes staging data into the derived table.
 
-EVIDENCE PENDING: Execute on the documented environment. Insert screenshots of this question's code and actual output, then add observed values and interpretation. No execution result is claimed by this template.
+Implementation: [table definitions](../hive/01_tables.hql).
 
-## 03. Write another MapReduce program
+## Hive analysis
 
-MR02: --task housing_by_education groups by education|housing. Count is column 3; unknown housing is a separate bucket. Capture counters and output.
+| Query | Calculation |
+|---|---|
+| H02 | Total records and a ten-record sample |
+| H03 | Married records with a personal loan |
+| H04 | Ten records with the highest balances |
+| H05 | Average age and record count by job |
+| H06 | Existing credit-default counts by education |
+| H07 | Five job categories with the highest mean balance, category counts, and subscription percentages |
+| H08 | Busiest contact month and subscription percentage |
+| H09 | Pearson correlation between age and balance |
+| H10 | Missing-year limitation for year-over-year analysis |
+| H11 | Education-level balance summaries and descriptive z-scores of group means |
+| H12 | Subscription percentage and record count by previous campaign outcome |
+| H13 | Mean contact duration by subscription outcome |
 
-EVIDENCE PENDING: Execute on the documented environment. Insert screenshots of this question's code and actual output, then add observed values and interpretation. No execution result is claimed by this template.
+Implementation: [analytical queries](../hive/02_analysis.hql).
 
-## 04. Perform a MapReduce job
+## Interpretation
 
-MR03: --task contacts_by_month groups by month|y. Sum/count are contact-record counts, not unique-person counts; no client ID is available.
+The records lack unique customer identifiers, so contact counts and top-balance records cannot establish distinct customer counts. The sample query has no defined ordering. Credit-default counts describe an existing attribute rather than predicted future defaults.
 
-EVIDENCE PENDING: Execute on the documented environment. Insert screenshots of this question's code and actual output, then add observed values and interpretation. No execution result is claimed by this template.
-
-## 05. Analyze the average duration
-
-MR04: --task duration_by_poutcome calculates mean contact seconds for each previous campaign outcome. This is not transaction duration.
-
-EVIDENCE PENDING: Execute on the documented environment. Insert screenshots of this question's code and actual output, then add observed values and interpretation. No execution result is claimed by this template.
-
-## 06. Examine the relationship
-
-MR05: --task balance_by_age summarizes average balance for <30, 30-60, >60 age groups. Complement with H09/EDA09 Pearson correlation. Report observed values without claiming causality.
-
-EVIDENCE PENDING: Execute on the documented environment. Insert screenshots of this question's code and actual output, then add observed values and interpretation. No execution result is claimed by this template.
-
-## 07. Create a Hive database
-
-H01: hive/01_tables.hql creates banking_data. Run using beeline and the RAW_PATH printed by run_hadoop.sh. Capture database/table creation.
-
-EVIDENCE PENDING: Execute on the documented environment. Insert screenshots of this question's code and actual output, then add observed values and interpretation. No execution result is claimed by this template.
-
-## 08. Define and create a Hive table
-
-H01: client_info_raw uses OpenCSVSerde strings to parse quoted CSV; client_info stores typed INT/BIGINT/STRING columns as ORC. Capture DESCRIBE banking_data.client_info.
-
-EVIDENCE PENDING: Execute on the documented environment. Insert screenshots of this question's code and actual output, then add observed values and interpretation. No execution result is claimed by this template.
-
-## 09. Load the data
-
-H01: external raw table points at the uploaded HDFS directory; INSERT OVERWRITE TABLE client_info casts into ORC. This refreshes the project's derived table; compare raw/typed row counts.
-
-EVIDENCE PENDING: Execute on the documented environment. Insert screenshots of this question's code and actual output, then add observed values and interpretation. No execution result is claimed by this template.
-
-## 10. Write a HiveQL query to count
-
-H02 in hive/02_analysis.hql: total row count. Include query and actual count.
-
-EVIDENCE PENDING: Execute on the documented environment. Insert screenshots of this question's code and actual output, then add observed values and interpretation. No execution result is claimed by this template.
-
-## 11. Display the first 10
-
-H02: SELECT * LIMIT 10; order is unspecified because no unique row ID exists.
-
-EVIDENCE PENDING: Execute on the documented environment. Insert screenshots of this question's code and actual output, then add observed values and interpretation. No execution result is claimed by this template.
-
-## 12. Retrieve all records
-
-H03: marital='married' AND loan='yes'. Capture query/output; retain complete results remotely if longer than the screenshot.
-
-EVIDENCE PENDING: Execute on the documented environment. Insert screenshots of this question's code and actual output, then add observed values and interpretation. No execution result is claimed by this template.
-
-## 13. List the top 10
-
-H04: descending balance with job/marital fields. These are records, not necessarily 10 distinct clients.
-
-EVIDENCE PENDING: Execute on the documented environment. Insert screenshots of this question's code and actual output, then add observed values and interpretation. No execution result is claimed by this template.
-
-## 14. Calculate the average age
-
-H05: average age and record count by job.
-
-EVIDENCE PENDING: Execute on the documented environment. Insert screenshots of this question's code and actual output, then add observed values and interpretation. No execution result is claimed by this template.
-
-## 15. Find the total number
-
-H06: existing credit default='yes', grouped by education. This is not a future-default prediction.
-
-EVIDENCE PENDING: Execute on the documented environment. Insert screenshots of this question's code and actual output, then add observed values and interpretation. No execution result is claimed by this template.
-
-## 16. Identify the top 5
-
-H07: rank average balance and report subscription percentage for those job categories, with category counts.
-
-EVIDENCE PENDING: Execute on the documented environment. Insert screenshots of this question's code and actual output, then add observed values and interpretation. No execution result is claimed by this template.
-
-## 17. Determine the month
-
-H08: contact count descending and current subscription success percentage; ties break alphabetically.
-
-EVIDENCE PENDING: Execute on the documented environment. Insert screenshots of this question's code and actual output, then add observed values and interpretation. No execution result is claimed by this template.
-
-## 18. Calculate the correlation
-
-H09: CORR(age,balance), Pearson correlation. Undefined for constant variables; association is not causation.
-
-EVIDENCE PENDING: Execute on the documented environment. Insert screenshots of this question's code and actual output, then add observed values and interpretation. No execution result is claimed by this template.
-
-## 19. Analyze the year-over-year
-
-H10 is explicitly not identifiable: bank.csv lacks year or contact_date. Do not invent years or infer them from row order. Obtain an observed dated dataset before completing a real YoY analysis.
-
-EVIDENCE PENDING: Execute on the documented environment. Insert screenshots of this question's code and actual output, then add observed values and interpretation. No execution result is claimed by this template.
-
-## 20. Identify any unusual patterns
-
-H11: education balance summaries and descriptive z-scores of group means. Bank balance is described as average yearly balance, but no longitudinal annual series exists. Flag candidates for review, not proven anomalies.
-
-EVIDENCE PENDING: Execute on the documented environment. Insert screenshots of this question's code and actual output, then add observed values and interpretation. No execution result is claimed by this template.
-
-## 21. Analyze the impact
-
-H12: current subscription percentage for each poutcome, including unknown. Discuss observed association and counts.
-
-EVIDENCE PENDING: Execute on the documented environment. Insert screenshots of this question's code and actual output, then add observed values and interpretation. No execution result is claimed by this template.
-
-## 22. Compare the average contact duration
-
-H13: mean contact seconds for y=yes versus y=no. Duration is post-call information and is excluded from pre-call prediction by default.
-
-EVIDENCE PENDING: Execute on the documented environment. Insert screenshots of this question's code and actual output, then add observed values and interpretation. No execution result is claimed by this template.
+The dataset lacks a year or full contact date. Monthly comparisons do not establish year-over-year trends. Balance screening is descriptive and does not establish fraud. Correlation and campaign-outcome comparisons describe association rather than causation. Completed-call duration is unavailable for prediction before a call.

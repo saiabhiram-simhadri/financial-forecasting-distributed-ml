@@ -1,26 +1,27 @@
-# Hadoop and Hive banking analysis
+# Hadoop and Hive Banking Analysis
 
-This repository contains only the Hadoop/Hive assignment. The other four assignments were completed separately in notebooks and are not executed, checked or packaged here.
+Bank-marketing analysis using HDFS, Python MapReduce, and Hive SQL. The implementation covers customer balance summaries, loan distributions, campaign activity, and subscription outcomes.
 
-Read [the overview](docs/PROJECT_OVERVIEW.md), then follow [the execution and screenshot guide](docs/EXECUTION.md).
+## Implementation
 
-For a new GitHub Codespace only, run bash scripts/codespaces/setup.sh. Place the instructor's semicolon-delimited bank.csv at data/bank.csv. In that remote terminal:
+- Five MapReduce jobs with sum/count combiners and grouped summaries.
+- CSV staging in Hive and conversion to a typed ORC table.
+- HiveQL queries for customer segments, campaign outcomes, and descriptive statistics.
+- Codespaces runtime configuration, input validation, output verification, and result packaging.
+- Offline tests for aggregation, ingestion guards, downloads, and runtime configuration.
 
-```bash
-bash scripts/codespaces/run.sh prepare
-bash scripts/codespaces/run.sh hadoop
-bash scripts/codespaces/run.sh hive
-bash scripts/codespaces/run.sh verify
-bash scripts/codespaces/run.sh package
-```
+## Project files
 
-For your completed run, resume rather than repeating setup or successful jobs (Step 9).
+| Directory | Content |
+|---|---|
+| [mapreduce](mapreduce/) | Python mapper and reducer |
+| [src](src/) | CSV parsing and aggregation logic |
+| [hive](hive/) | Table definitions and analytical queries |
+| [scripts](scripts/) | Validation, execution, and packaging utilities |
+| [tests](tests/) | Offline tests |
 
-- [MapReduce](mapreduce/): five summaries with Python mapper, combiner and reducer.
-- [Hive](hive/): string CSV staging, typed ORC table and SQL questions.
-- [Question guide](docs/report_hadoop_hive.md): 22 assignment prompts.
-- [Validation status](docs/VALIDATION.md): checks and execution limits.
+[Architecture](docs/project_architecture.md) describes the processing flow. [Analysis](docs/report_hadoop_hive.md) summarizes the implemented calculations.
 
-Setup uses Java 8, Hadoop 3.3.6, Hive 4.0.1 and standard-library Python. No Spark or pip packages are needed. Existing persistent paths (.codespaces-state and artifacts/codespaces) are unchanged; source cleanup does not erase remote results.
+The runtime uses Hadoop 3.3.6, Hive 4.0.1, Java 8, and standard-library Python in a single-host pseudo-distributed environment. Spark work is maintained separately and is outside this repository.
 
-This is single-host pseudo-distributed Hadoop. No year field exists, so year-over-year contacts cannot be computed. Complete screenshots and measured interpretations; the annotated DOCX is a template, not finished evidence. Submit your four separate notebooks independently.
+The dataset contains contact records without unique customer identifiers or a year field. Counts represent records, and year-over-year analysis is unavailable. Numerical findings require the corresponding execution outputs; this checkout contains implementation code rather than a completed results report.
